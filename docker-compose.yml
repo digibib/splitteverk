@@ -1,0 +1,26 @@
+---
+version: '2.1'
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  virtuoso_data: {}
+
+services:
+  virtuoso:
+    container_name: virtuoso
+    image: "digibib/virtuoso"
+    networks:
+      - backend
+    ports:
+      - "8890:8890"
+    volumes:
+      - "virtuoso_data:/virtuoso/var/lib/virtuoso/db"
+      - "./data:/data"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "2"
