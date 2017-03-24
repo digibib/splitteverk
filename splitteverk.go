@@ -356,7 +356,9 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	var b bytes.Buffer
 	b.WriteString("# Updating work ")
 	b.WriteString(uri)
-	b.WriteString("\n\nDELETE WHERE { ")
+	b.WriteString("\n\nDELETE { ")
+	b.WriteString(uri)
+	b.WriteString(" ?p ?o }\nWHERE { \n")
 	b.WriteString(uri)
 	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.data.deichman.no/clonedFrom> ")
 	for k, prop := range work.diff {
