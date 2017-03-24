@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/knakk/rdf"
 	"github.com/knakk/sparql"
@@ -167,7 +169,8 @@ CONSTRUCT {
           :audience ?audience ;
           :literaryForm ?litform ;
           :hasWorkType ?worktype ;
-          :hasCompositionType ?comptype .
+          :hasCompositionType ?comptype ;
+          <classNumberAndSource> ?classNumberAndSource .
 }
 WHERE {
 	?p :publicationOf <{{.URI}}> ; :recordId ?recordId .
@@ -182,6 +185,7 @@ WHERE {
 	UNION { GRAPH <migration> { ?p :hasWorkType ?worktype } }
   UNION { GRAPH <migration> { ?p :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype } }
   UNION { GRAPH <migration> { ?p :hasClassification [ :hasClassificationNumber ?classificationLabel ] } }
+  UNION { GRAPH <migration> { ?p :hasClassification ?classEntry . ?classEntry :hasClassificationNumber ?classNumber . OPTIONAL { ?classEntry :hasClassificationSource ?classSource } BIND(IF(BOUND(?classSource), CONCAT(?classNumber, "____", ?classSource), ?classNumber) AS ?classNumberAndSource) } }
 }
 
 `
@@ -306,7 +310,8 @@ func skipProp(prop rdf.Term) bool {
 	return rdf.TermsEqual(prop, mustURI("genreLabel")) ||
 		rdf.TermsEqual(prop, mustURI("subjectLabel")) ||
 		rdf.TermsEqual(prop, mustURI("recordId")) ||
-		rdf.TermsEqual(prop, mustURI("classificationLabel"))
+		rdf.TermsEqual(prop, mustURI("classificationLabel")) ||
+		rdf.TermsEqual(prop, mustURI("classNumberAndSource"))
 }
 
 func diffWorks(from, to []rdf.Triple) workDiff {
@@ -358,9 +363,9 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	b.WriteString(uri)
 	b.WriteString("\n\nDELETE { ")
 	b.WriteString(uri)
-	b.WriteString(" ?p ?o }\nWHERE { \n")
+	b.WriteString(" ?p ?o . ?class ?cp ?co }\nWHERE { \n{ ")
 	b.WriteString(uri)
-	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.data.deichman.no/clonedFrom> ")
+	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.data.deichman.no/clonedFrom> <http://data.deichman.no/ontology#hasClassification> ")
 	for k, prop := range work.diff {
 		for _, term := range prop.a {
 			if _, ok := labels[k]; !ok {
@@ -379,20 +384,40 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 		b.WriteString(k.Serialize(rdf.NTriples))
 		b.WriteRune(' ')
 	}
-	b.WriteString("}\n};\n\n")
+	b.WriteString("} }\nUNION { ")
+	b.WriteString(uri)
+	b.WriteString(" <http://data.deichman.no/ontology#hasClassification> ?class . ?class ?cp ?o .}\n};\n\n")
 	b.WriteString("INSERT DATA {")
 	for k, v := range work.diff {
+		onlyInsert := false
 		if _, ok := labels[k]; !ok {
-			continue
+			onlyInsert = true
 		}
 		for _, term := range v.b {
-			to := work.To[labels[k]]
-			if to != "" {
-				to += ", "
+			if !onlyInsert {
+				to := work.To[labels[k]]
+				if to != "" {
+					to += ", "
+				}
+				to += term.String()
+				work.To[labels[k]] = to
+				if skipProp(k) {
+					continue
+				}
 			}
-			to += term.String()
-			work.To[labels[k]] = to
-			if skipProp(k) {
+			if rdf.TermsEqual(k, mustURI("classNumberAndSource")) {
+				parts := strings.Split(term.String(), "____")
+				b.WriteString("\n\t")
+				b.WriteString(uri)
+				b.WriteString(" <http://data.deichman.no/ontology#hasClassification> [ a <http://data.deichman.no/ontology#ClassificationEntry> ; <http://data.deichman.no/ontology#hasClassificationNumber> ")
+				b.WriteString(strconv.Quote(parts[0]))
+				if len(parts) > 1 {
+					b.WriteString(" ; <http://data.deichman.no/ontology#hasClassificationSource> <")
+					b.WriteString(parts[1])
+					b.WriteString(">")
+				}
+				b.WriteString(" ]")
+				b.WriteString(" .")
 				continue
 			}
 			b.WriteString("\n\t")
