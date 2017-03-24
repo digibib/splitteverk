@@ -136,7 +136,8 @@ CONSTRUCT {
           :audience ?audience ;
           :literaryForm ?litform ;
           :hasWorkType ?worktype ;
-          :hasCompositionType ?comptype .
+          :hasCompositionType ?ctype ;
+          <comptype> ?comptype .
 }
 WHERE {
 	{ <{{.URI}}> :mainTitle ?mainTitle }
@@ -169,7 +170,8 @@ CONSTRUCT {
           :audience ?audience ;
           :literaryForm ?litform ;
           :hasWorkType ?worktype ;
-          :hasCompositionType ?comptype ;
+          :hasCompositionType ?ctype ;
+          <comptype> ?comptype ;
           <classNumberAndSource> ?classNumberAndSource .
 }
 WHERE {
@@ -191,18 +193,18 @@ WHERE {
 `
 
 var labels = map[rdf.IRI]string{
-	mustURI("mainTitle"):                                           "tittel",
-	mustURI("subtitle"):                                            "tittel",
-	mustURI("partTitle"):                                           "tittel",
-	mustURI("partNumber"):                                          "tittel",
-	mustURI("subjectLabel"):                                        "emne",
-	mustURI("genreLabel"):                                          "sjanger",
-	mustURI("recordId"):                                            "tittelnr",
-	mustURI("classificationLabel"):                                 "klassifikasjon",
-	mustURI("http://data.deichman.no/ontology#audience"):           "målgruppe",
-	mustURI("http://data.deichman.no/ontology#hasCompositionType"): "komposisjonstype",
-	mustURI("http://data.deichman.no/ontology#hasWorkType"):        "verkstype",
-	mustURI("http://data.deichman.no/ontology#literaryForm"):       "litterær form",
+	mustURI("mainTitle"):                                     "tittel",
+	mustURI("subtitle"):                                      "tittel",
+	mustURI("partTitle"):                                     "tittel",
+	mustURI("partNumber"):                                    "tittel",
+	mustURI("subjectLabel"):                                  "emne",
+	mustURI("genreLabel"):                                    "sjanger",
+	mustURI("recordId"):                                      "tittelnr",
+	mustURI("classificationLabel"):                           "klassifikasjon",
+	mustURI("comptype"):                                      "komposisjonstype",
+	mustURI("http://data.deichman.no/ontology#audience"):     "målgruppe",
+	mustURI("http://data.deichman.no/ontology#hasWorkType"):  "verkstype",
+	mustURI("http://data.deichman.no/ontology#literaryForm"): "litterær form",
 }
 
 func mustURI(s string) rdf.IRI {
@@ -311,7 +313,8 @@ func skipProp(prop rdf.Term) bool {
 		rdf.TermsEqual(prop, mustURI("subjectLabel")) ||
 		rdf.TermsEqual(prop, mustURI("recordId")) ||
 		rdf.TermsEqual(prop, mustURI("classificationLabel")) ||
-		rdf.TermsEqual(prop, mustURI("classNumberAndSource"))
+		rdf.TermsEqual(prop, mustURI("classNumberAndSource")) ||
+		rdf.TermsEqual(prop, mustURI("comptype"))
 }
 
 func diffWorks(from, to []rdf.Triple) workDiff {
