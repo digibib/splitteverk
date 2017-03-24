@@ -71,7 +71,7 @@ var templ = template.Must(template.New("index").Parse(`
 
 			</div>
 			<div class="queries">
-				<button id="show-queries">Vis SPARQL spørringer for å oppdatere valgte verk</button><br/>
+				<button id="select-all">Velg alle</button> <button id="show-queries">Vis SPARQL spørringer for å oppdatere valgte verk</button><br/>
 				<textarea rows="10" id="selected-queries"></textarea>
 			</div>
 		</main>
@@ -96,6 +96,13 @@ var templ = template.Must(template.New("index").Parse(`
 					}
 				}
 				document.getElementById("selected-queries").value = result;
+			})
+
+			document.getElementById("select-all").addEventListener("click", function(event) {
+				var inputs = document.querySelectorAll("input[type=checkbox]");
+				for (var input of inputs) {
+					input.checked = !input.checked
+				}
 			})
 
 		</script>
