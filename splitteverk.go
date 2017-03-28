@@ -50,12 +50,12 @@ var templ = template.Must(template.New("index").Parse(`
 			<p>Fant {{len .}} kandidater til behandling:</p>
 			<div class="candidates">
 				{{range .}}
-				<div class="candidate">
+				<div class="candidate" id="{{.ID}}">
 					<div class="candidate-keep"><input type="checkbox" value="{{.SPARQL}}" /></div>
 					<div class="candidate-title">
 						<strong>{{.Title}} </strong>
 					</div>
-					<div class="candidate-details" id="{{.ID}}">
+					<div class="candidate-details" >
 						<div class="candidate-from">
 							{{range $k, $v := .From}}
 							<strong>{{$k}}</strong>: {{$v}}<br/>
@@ -74,7 +74,8 @@ var templ = template.Must(template.New("index").Parse(`
 			</div>
 			<div class="queries">
 				<button id="select-all">Velg alle</button> <button id="show-queries">Vis SPARQL spørringer for å oppdatere valgte verk</button><br/>
-				<textarea rows="10" id="selected-queries"></textarea>
+				<textarea rows="10" id="selected-queries"></textarea><br/>
+				<textarea rows="10" id="updated-works"></textarea>
 			</div>
 		</main>
 		<script>
@@ -90,14 +91,17 @@ var templ = template.Must(template.New("index").Parse(`
 
 			document.getElementById("show-queries").addEventListener("click", function(event) {
 				var result = "";
+				var uris = [];
 				var inputs = document.querySelectorAll("input[type=checkbox]");
 				for (var input of inputs) {
 					if (input.checked) {
 						result += "\n";
 						result += input.value;
+						uris.push(input.parentNode.parentNode.id);
 					}
 				}
 				document.getElementById("selected-queries").value = result;
+				document.getElementById("updated-works").value = uris.join("\n");
 			})
 
 			document.getElementById("select-all").addEventListener("click", function(event) {
@@ -145,7 +149,7 @@ UNION { <{{.URI}}> :partTitle ?partTitle }
 UNION { <{{.URI}}> :subtitle ?subtitle }
 UNION { <{{.URI}}> :partNumber ?partNumber }
 UNION { <{{.URI}}> :subject ?subject . ?subject :prefLabel ?subjectLabel }
-UNION { <{{.URI}}> :genre ?genre . 	?genre :prefLabel ?genreLabel }
+UNION { <{{.URI}}> :genre ?genre . ?genre :prefLabel ?genreLabel }
 UNION { <{{.URI}}> :audience ?audience }
 UNION { <{{.URI}}> :literaryForm ?litform }
 UNION { <{{.URI}}> :hasWorkType ?worktype }
@@ -181,7 +185,7 @@ WHERE {
 	UNION { <{{.URI}}> :subtitle ?subtitle }
 	UNION { <{{.URI}}> :partNumber ?partNumber }
 	UNION { GRAPH <migration> { ?p :subject ?subject . ?subject :prefLabel ?subjectLabel } }
-	UNION { GRAPH <migration> { ?p :genre ?genre . 	?genre :prefLabel ?genreLabel } }
+	UNION { GRAPH <migration> { ?p :genre ?genre . ?genre :prefLabel ?genreLabel } }
 	UNION { GRAPH <migration> { ?p :audience ?audience } }
 	UNION { GRAPH <migration> { ?p :literaryForm ?litform  } }
 	UNION { GRAPH <migration> { ?p :hasWorkType ?worktype } }
