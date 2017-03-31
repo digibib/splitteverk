@@ -148,7 +148,7 @@ WHERE {
 UNION { <{{.URI}}> :partTitle ?partTitle }
 UNION { <{{.URI}}> :subtitle ?subtitle }
 UNION { <{{.URI}}> :partNumber ?partNumber }
-UNION { <{{.URI}}> :subject ?subject . ?subject :prefLabel ?subjectLabel }
+UNION { <{{.URI}}> :subject ?subject . ?subject :prefLabel|:name|:mainTitle ?subjectLabel }
 UNION { <{{.URI}}> :genre ?genre . ?genre :prefLabel ?genreLabel }
 UNION { <{{.URI}}> :audience ?audience }
 UNION { <{{.URI}}> :literaryForm ?litform }
@@ -184,7 +184,7 @@ WHERE {
 	UNION { <{{.URI}}> :partTitle ?partTitle }
 	UNION { <{{.URI}}> :subtitle ?subtitle }
 	UNION { <{{.URI}}> :partNumber ?partNumber }
-	UNION { GRAPH <migration> { ?p :subject ?subject . ?subject :prefLabel ?subjectLabel } }
+	UNION { GRAPH <migration> { ?p :subject ?subject . ?subject :prefLabel|:name|:mainTitle ?subjectLabel } }
 	UNION { GRAPH <migration> { ?p :genre ?genre . ?genre :prefLabel ?genreLabel } }
 	UNION { GRAPH <migration> { ?p :audience ?audience } }
 	UNION { GRAPH <migration> { ?p :literaryForm ?litform  } }
