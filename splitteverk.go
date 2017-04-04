@@ -2,9 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
@@ -74,8 +77,11 @@ var templ = template.Must(template.New("index").Parse(`
 			</div>
 			<div class="queries">
 				<button id="select-all">Velg alle</button> <button id="show-queries">Vis SPARQL spørringer for å oppdatere valgte verk</button><br/>
-				<textarea rows="10" id="selected-queries"></textarea><br/>
-				<textarea rows="10" id="updated-works"></textarea>
+				<form action="/update" method="POST">
+					<textarea name="queries" rows="10" id="selected-queries"></textarea><br/>
+					<textarea name="works" rows="10" id="updated-works"></textarea><br/>
+				<button type="submit" id="launch-rocket"><strong>⚠ Oppdatér produksjonsdata og reindekser valgte verk ⚠</strong></button>
+				</form>
 			</div>
 		</main>
 		<script>
@@ -121,7 +127,8 @@ const queries = `
 PREFIX : <http://data.deichman.no/ontology#>
 
 SELECT DISTINCT ?prodWork WHERE {
-	GRAPH <prod> { ?prodWork <http://migration.deichman.no/clonedFrom> ?fromWork } .
+	SERVICE <http://fuseki:3030/ds/sparql>
+	{ ?prodWork <http://migration.deichman.no/clonedFrom> ?fromWork } .
 }
 
 # tag: prodWork
@@ -144,7 +151,8 @@ CONSTRUCT {
           <comptype> ?comptype .
 }
 WHERE {
-	{ <{{.URI}}> :mainTitle ?mainTitle }
+	SERVICE <http://fuseki:3030/ds/sparql> {
+			{ <{{.URI}}> :mainTitle ?mainTitle }
 UNION { <{{.URI}}> :partTitle ?partTitle }
 UNION { <{{.URI}}> :subtitle ?subtitle }
 UNION { <{{.URI}}> :partNumber ?partNumber }
@@ -155,6 +163,7 @@ UNION { <{{.URI}}> :literaryForm ?litform }
 UNION { <{{.URI}}> :hasWorkType ?worktype }
 UNION { <{{.URI}}> :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype }
 UNION { <{{.URI}}> :hasClassification [ :hasClassificationNumber ?classificationLabel ] }
+  }
 }
 
 # tag: migWork
@@ -179,19 +188,21 @@ CONSTRUCT {
           <classNumberAndSource> ?classNumberAndSource .
 }
 WHERE {
-	?p :publicationOf <{{.URI}}> ; :recordId ?recordId .
-	{ <{{.URI}}> :mainTitle ?mainTitle }
-	UNION { <{{.URI}}> :partTitle ?partTitle }
-	UNION { <{{.URI}}> :subtitle ?subtitle }
-	UNION { <{{.URI}}> :partNumber ?partNumber }
-	UNION { GRAPH <migration> { ?p :subject ?subject . ?subject :prefLabel|:name|:mainTitle ?subjectLabel } }
-	UNION { GRAPH <migration> { ?p :genre ?genre . ?genre :prefLabel ?genreLabel } }
-	UNION { GRAPH <migration> { ?p :audience ?audience } }
-	UNION { GRAPH <migration> { ?p :literaryForm ?litform  } }
-	UNION { GRAPH <migration> { ?p :hasWorkType ?worktype } }
-  UNION { GRAPH <migration> { ?p :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype } }
-  UNION { GRAPH <migration> { ?p :hasClassification [ :hasClassificationNumber ?classificationLabel ] } }
-  UNION { GRAPH <migration> { ?p :hasClassification ?classEntry . ?classEntry :hasClassificationNumber ?classNumber . OPTIONAL { ?classEntry :hasClassificationSource ?classSource } BIND(IF(BOUND(?classSource), CONCAT(?classNumber, "____", ?classSource), ?classNumber) AS ?classNumberAndSource) } }
+	SERVICE <http://fuseki:3030/ds/sparql> {
+					{ ?p :publicationOf <{{.URI}}> ; :recordId ?recordId . }
+		UNION { <{{.URI}}> :mainTitle ?mainTitle }
+		UNION { <{{.URI}}> :partTitle ?partTitle }
+		UNION { <{{.URI}}> :subtitle ?subtitle }
+		UNION { <{{.URI}}> :partNumber ?partNumber }
+	}
+	      { ?p :subject ?subject . ?subject :prefLabel|:name|:mainTitle ?subjectLabel }
+	UNION { ?p :genre ?genre . ?genre :prefLabel ?genreLabel }
+	UNION { ?p :audience ?audience }
+	UNION { ?p :literaryForm ?litform  }
+	UNION { ?p :hasWorkType ?worktype }
+  UNION { ?p :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype }
+  UNION { ?p :hasClassification [ :hasClassificationNumber ?classificationLabel ] }
+  UNION { ?p :hasClassification ?classEntry . ?classEntry :hasClassificationNumber ?classNumber . OPTIONAL { ?classEntry :hasClassificationSource ?classSource } BIND(IF(BOUND(?classSource), CONCAT(?classNumber, "____", ?classSource), ?classNumber) AS ?classNumberAndSource) }
 }
 
 `
@@ -327,27 +338,31 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 		From: make(map[string]string),
 		To:   make(map[string]string),
 	}
+	title := Title{}
 	for _, t := range from {
+		if rdf.TermsEqual(t.Pred, mustURI("mainTitle")) {
+			work.ID = t.Subj.String()
+			title.mainTitle = t.Obj.String()
+			continue
+		}
+		if rdf.TermsEqual(t.Pred, mustURI("partTitle")) {
+			title.partTitle = t.Obj.String()
+			continue
+		}
+		if rdf.TermsEqual(t.Pred, mustURI("subtitle")) {
+			title.subtitle = t.Obj.String()
+			continue
+		}
+		if rdf.TermsEqual(t.Pred, mustURI("partNumber")) {
+			title.partNumber = t.Obj.String()
+			continue
+		}
 		prop := work.diff[t.Pred.(rdf.IRI)]
 		prop.a = append(prop.a, t.Obj)
 		work.diff[t.Pred.(rdf.IRI)] = prop
 	}
 
-	title := Title{}
 	for _, t := range to {
-		if rdf.TermsEqual(t.Pred, mustURI("mainTitle")) {
-			work.ID = t.Subj.String()
-			title.mainTitle = t.Obj.String()
-		}
-		if rdf.TermsEqual(t.Pred, mustURI("partTitle")) {
-			title.partTitle = t.Obj.String()
-		}
-		if rdf.TermsEqual(t.Pred, mustURI("subtitle")) {
-			title.subtitle = t.Obj.String()
-		}
-		if rdf.TermsEqual(t.Pred, mustURI("partNumber")) {
-			title.partNumber = t.Obj.String()
-		}
 		prop := work.diff[t.Pred.(rdf.IRI)]
 		prop.b = append(prop.b, t.Obj)
 		work.diff[t.Pred.(rdf.IRI)] = prop
@@ -372,7 +387,7 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	b.WriteString(uri)
 	b.WriteString(" ?p ?o . ?class ?cp ?co }\nWHERE { \n{ ")
 	b.WriteString(uri)
-	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.data.deichman.no/clonedFrom> <http://data.deichman.no/ontology#hasClassification> ")
+	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.deichman.no/clonedFrom> <http://data.deichman.no/ontology#hasClassification> ")
 	for k, prop := range work.diff {
 		for _, term := range prop.a {
 			if _, ok := labels[k]; !ok {
@@ -460,6 +475,48 @@ func (m *Main) handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	queries := r.FormValue("queries")
+	works := r.FormValue("works")
+
+	resp, err := http.PostForm("http://localhost:3030/ds/update",
+		url.Values{"update": {queries}})
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		defer resp.Body.Close()
+		b, _ := ioutil.ReadAll(resp.Body)
+		http.Error(w, string(b), http.StatusInternalServerError)
+		return
+	}
+
+	workURIs := strings.Split(works, "\n")
+	for _, work := range workURIs {
+		id := strings.TrimPrefix(work, "http://data.deichman.no/")
+		req, err := http.NewRequest(http.MethodPut, "http://localhost:8005/"+strings.TrimSuffix(id, "\r")+"/index", nil)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		_, err = http.DefaultClient.Do(req)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+	}
+
+	fmt.Fprintf(w, "OK oppdaterte alle verk")
+}
+
 func main() {
 	log.SetFlags(0)
 
@@ -469,6 +526,7 @@ func main() {
 	}
 
 	http.HandleFunc("/home", m.handler)
+	http.HandleFunc("/update", m.updateHandler)
 
 	log.Fatal(http.ListenAndServe(":8811", nil))
 
