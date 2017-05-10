@@ -502,7 +502,8 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 	workURIs := strings.Split(works, "\n")
 	for _, work := range workURIs {
 		id := strings.TrimPrefix(work, "http://data.deichman.no/")
-		req, err := http.NewRequest(http.MethodPut, "http://localhost:8005/"+strings.TrimSuffix(id, "\r")+"/index", nil)
+		req, err := http.NewRequest(http.MethodPatch, "http://localhost:8005/"+strings.TrimSuffix(id, "\r"), bytes.NewBuffer([]byte("[]")))
+		req.Header.Set("Content-Type", "application/ldpatch+json")
 		if err != nil {
 			log.Println(err)
 			continue
