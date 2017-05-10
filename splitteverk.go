@@ -526,7 +526,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/home", m.handler)
+	http.HandleFunc("/", m.handler)
 	http.HandleFunc("/update", m.updateHandler)
 
 	log.Fatal(http.ListenAndServe(":8811", nil))
