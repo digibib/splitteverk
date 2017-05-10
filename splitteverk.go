@@ -236,7 +236,7 @@ type Main struct {
 }
 
 func newMain() (*Main, error) {
-	repo, err := sparql.NewRepo("http://localhost:8890/sparql")
+	repo, err := sparql.NewRepo("http://virtuoso:8890/sparql")
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +484,7 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 	queries := r.FormValue("queries")
 	works := r.FormValue("works")
 
-	resp, err := http.PostForm("http://localhost:3030/ds/update",
+	resp, err := http.PostForm("http://fuseki:3030/ds/update",
 		url.Values{"update": {queries}})
 	if err != nil {
 		log.Println(err.Error())
@@ -502,7 +502,7 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 	workURIs := strings.Split(works, "\n")
 	for _, work := range workURIs {
 		id := strings.TrimPrefix(work, "http://data.deichman.no/")
-		req, err := http.NewRequest(http.MethodPatch, "http://localhost:8005/"+strings.TrimSuffix(id, "\r"), bytes.NewBuffer([]byte("[]")))
+		req, err := http.NewRequest(http.MethodPatch, "http://services:8005/"+strings.TrimSuffix(id, "\r"), bytes.NewBuffer([]byte("[]")))
 		req.Header.Set("Content-Type", "application/ldpatch+json")
 		if err != nil {
 			log.Println(err)
