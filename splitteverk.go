@@ -492,8 +492,8 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		defer resp.Body.Close()
 		b, _ := ioutil.ReadAll(resp.Body)
 		http.Error(w, string(b), http.StatusInternalServerError)
 		return
