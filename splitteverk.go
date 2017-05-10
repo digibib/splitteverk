@@ -78,7 +78,7 @@ var templ = template.Must(template.New("index").Parse(`
 			<div class="queries">
 				<button id="select-all">Velg alle</button> <button id="show-queries">Vis SPARQL spørringer for å oppdatere valgte verk</button><br/>
 				<form action="/update" method="POST">
-					<textarea name="queries" rows="10" id="selected-queries" disabled="true"></textarea><br/>
+					<textarea name="queries" rows="10" id="selected-queries" readonly="true"></textarea><br/>
 					<textarea name="works" rows="10" id="updated-works" style="display:none"></textarea><br/>
 				<button type="submit" id="launch-rocket"><strong>⚠ Oppdatér produksjonsdata og reindekser valgte verk ⚠</strong></button>
 				</form>
