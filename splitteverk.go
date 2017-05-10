@@ -136,10 +136,10 @@ PREFIX : <http://data.deichman.no/ontology#>
 
 CONSTRUCT {
  <{{.URI}}> <mainTitle> ?mainTitle ;
- 	        <subtitle> ?subtitle ;
- 	        <partTitle> ?partTitle ;
- 	        <partNumber> ?partNumber ;
- 					:subject ?subject ;
+          <subtitle> ?subtitle ;
+          <partTitle> ?partTitle ;
+          <partNumber> ?partNumber ;
+          :subject ?subject ;
           <subjectLabel> ?subjectLabel ;
           :genre ?genre ;
           <genreLabel> ?genreLabel ;
@@ -151,8 +151,8 @@ CONSTRUCT {
           <comptype> ?comptype .
 }
 WHERE {
-	SERVICE <http://fuseki:3030/ds/sparql> {
-			{ <{{.URI}}> :mainTitle ?mainTitle }
+  SERVICE <http://fuseki:3030/ds/sparql> {
+      { <{{.URI}}> :mainTitle ?mainTitle }
 UNION { <{{.URI}}> :partTitle ?partTitle }
 UNION { <{{.URI}}> :subtitle ?subtitle }
 UNION { <{{.URI}}> :partNumber ?partNumber }
