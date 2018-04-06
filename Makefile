@@ -4,5 +4,5 @@ build:
 docker: build
 	docker build -t digibib/splitteverk:$(shell git rev-parse HEAD) .
 
-push:
+push: docker
 	docker push digibib/splitteverk:$(shell git rev-parse HEAD)

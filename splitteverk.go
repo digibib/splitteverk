@@ -128,7 +128,7 @@ PREFIX : <http://data.deichman.no/ontology#>
 
 SELECT DISTINCT ?prodWork WHERE {
 	SERVICE <http://fuseki:3030/ds/sparql>
-	{ ?prodWork <http://migration.deichman.no/clonedFrom> ?fromWork } .
+	{ ?prodWork <http://migration.deichman.no/splitFrom> ?fromWork } .
 }
 
 # tag: prodWork
@@ -387,7 +387,7 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	b.WriteString(uri)
 	b.WriteString(" ?p ?o . ?class ?cp ?co }\nWHERE { \n{ ")
 	b.WriteString(uri)
-	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.deichman.no/clonedFrom> <http://data.deichman.no/ontology#hasClassification> ")
+	b.WriteString(" ?p ?o .\n\tVALUES ?p { <http://migration.deichman.no/splitFrom> <http://data.deichman.no/ontology#hasClassification> ")
 	for k, prop := range work.diff {
 		for _, term := range prop.a {
 			if _, ok := labels[k]; !ok {
