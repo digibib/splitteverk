@@ -126,9 +126,10 @@ const queries = `
 # tag: candidateWorks
 PREFIX : <http://data.deichman.no/ontology#>
 
-SELECT DISTINCT ?prodWork WHERE {
-	SERVICE <http://fuseki:3030/ds/sparql>
-	{ ?prodWork <http://migration.deichman.no/splitFrom> ?fromWork } .
+SELECT DISTINCT ?prodWork
+FROM <https://katalog.deichman.no>
+WHERE {
+	?prodWork <http://migration.deichman.no/splitFrom> ?fromWork .
 }
 
 # tag: prodWork
@@ -150,8 +151,8 @@ CONSTRUCT {
           :hasCompositionType ?ctype ;
           <comptype> ?comptype .
 }
+FROM <https://katalog.deichman.no>
 WHERE {
-  SERVICE <http://fuseki:3030/ds/sparql> {
       { <{{.URI}}> :mainTitle ?mainTitle }
 UNION { <{{.URI}}> :partTitle ?partTitle }
 UNION { <{{.URI}}> :subtitle ?subtitle }
@@ -163,7 +164,6 @@ UNION { <{{.URI}}> :literaryForm ?litform }
 UNION { <{{.URI}}> :hasWorkType ?worktype }
 UNION { <{{.URI}}> :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype }
 UNION { <{{.URI}}> :hasClassification [ :hasClassificationNumber ?classificationLabel ] }
-  }
 }
 
 # tag: migWork
@@ -187,8 +187,10 @@ CONSTRUCT {
           <comptype> ?comptype ;
           <classNumberAndSource> ?classNumberAndSource .
 }
+FROM <migration>
+FROM NAMED <https://katalog.deichman.no>
 WHERE {
-	SERVICE <http://fuseki:3030/ds/sparql> {
+	GRAPH <https://katalog.deichman.no> {
 					{ ?p :publicationOf <{{.URI}}> ; :recordId ?recordId . }
 		UNION { <{{.URI}}> :mainTitle ?mainTitle }
 		UNION { <{{.URI}}> :partTitle ?partTitle }
@@ -484,7 +486,7 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 	queries := r.FormValue("queries")
 	works := r.FormValue("works")
 
-	resp, err := http.PostForm("http://fuseki:3030/ds/update",
+	resp, err := http.PostForm("http://virtuso:8890/sparql",
 		url.Values{"update": {queries}})
 	if err != nil {
 		log.Println(err.Error())
