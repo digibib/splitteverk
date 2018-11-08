@@ -171,11 +171,11 @@ PREFIX : <http://data.deichman.no/ontology#>
 
 CONSTRUCT {
  <{{.URI}}> <mainTitle> ?mainTitle ;
- 	        <subtitle> ?subtitle ;
- 	        <partTitle> ?partTitle ;
- 	        <partNumber> ?partNumber ;
- 	        <recordId> ?recordId ;
- 	        :subject ?subject ;
+          <subtitle> ?subtitle ;
+          <partTitle> ?partTitle ;
+          <partNumber> ?partNumber ;
+          <recordId> ?recordId ;
+          :subject ?subject ;
           <subjectLabel> ?subjectLabel ;
           :genre ?genre ;
           <genreLabel> ?genreLabel ;
@@ -191,20 +191,21 @@ FROM <migration>
 FROM NAMED <https://katalog.deichman.no>
 WHERE {
 	GRAPH <https://katalog.deichman.no> {
-					{ ?p :publicationOf <{{.URI}}> ; :recordId ?recordId . }
-		UNION { <{{.URI}}> :mainTitle ?mainTitle }
-		UNION { <{{.URI}}> :partTitle ?partTitle }
-		UNION { <{{.URI}}> :subtitle ?subtitle }
-		UNION { <{{.URI}}> :partNumber ?partNumber }
+					?p :publicationOf <{{.URI}}> ;
+						:recordId ?recordId ;
+						:mainTitle ?mainTitle .
+		OPTIONAL { <{{.URI}}> :partTitle ?partTitle }
+		OPTIONAL { <{{.URI}}> :subtitle ?subtitle }
+		OPTIONAL { <{{.URI}}> :partNumber ?partNumber }
 	}
 	      { ?p :subject ?subject . ?subject :prefLabel|:name|:mainTitle ?subjectLabel }
 	UNION { ?p :genre ?genre . ?genre :prefLabel ?genreLabel }
 	UNION { ?p :audience ?audience }
 	UNION { ?p :literaryForm ?litform  }
 	UNION { ?p :hasWorkType ?worktype }
-  UNION { ?p :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype }
-  UNION { ?p :hasClassification [ :hasClassificationNumber ?classificationLabel ] }
-  UNION { ?p :hasClassification ?classEntry . ?classEntry :hasClassificationNumber ?classNumber . OPTIONAL { ?classEntry :hasClassificationSource ?classSource } BIND(IF(BOUND(?classSource), CONCAT(?classNumber, "____", ?classSource), ?classNumber) AS ?classNumberAndSource) }
+	UNION { ?p :hasCompositionType ?ctype . ?ctype :prefLabel ?comptype }
+	UNION { ?p :hasClassification [ :hasClassificationNumber ?classificationLabel ] }
+	UNION { ?p :hasClassification ?classEntry . ?classEntry :hasClassificationNumber ?classNumber . OPTIONAL { ?classEntry :hasClassificationSource ?classSource } BIND(IF(BOUND(?classSource), CONCAT(?classNumber, "____", ?classSource), ?classNumber) AS ?classNumberAndSource) }
 }
 
 `
