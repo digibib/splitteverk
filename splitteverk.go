@@ -386,6 +386,7 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	var b bytes.Buffer
 	b.WriteString("# Updating work ")
 	b.WriteString(uri)
+	b.WriteString("\n\nWITH <https://katalog.deichman.no>")
 	b.WriteString("\n\nDELETE { ")
 	b.WriteString(uri)
 	b.WriteString(" ?p ?o . ?class ?cp ?co }\nWHERE { \n{ ")
