@@ -488,7 +488,7 @@ func (m *Main) updateHandler(w http.ResponseWriter, r *http.Request) {
 	queries := r.FormValue("queries")
 	works := r.FormValue("works")
 
-	resp, err := http.PostForm("http://virtuso:8890/sparql",
+	resp, err := http.PostForm("http://virtuoso:8890/sparql",
 		url.Values{"update": {queries}})
 	if err != nil {
 		log.Println(err.Error())
