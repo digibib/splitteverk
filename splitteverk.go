@@ -413,7 +413,7 @@ func diffWorks(from, to []rdf.Triple) workDiff {
 	b.WriteString("} }\nUNION { ")
 	b.WriteString(uri)
 	b.WriteString(" <http://data.deichman.no/ontology#hasClassification> ?class . ?class ?cp ?co .}\n};\n\n")
-	b.WriteString("BASE <http://data.deichman.no/ontology#>\nINSERT DATA {")
+	b.WriteString("BASE <http://data.deichman.no/ontology#>\nWITH <https://katalog.deichman.no>\nINSERT DATA {")
 	for k, v := range work.diff {
 		onlyInsert := false
 		if _, ok := labels[k]; !ok {
