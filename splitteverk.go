@@ -530,6 +530,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	http.Handle("/favicon.ico", http.NotFoundHandler())
 	http.HandleFunc("/", m.handler)
 	http.HandleFunc("/update", m.updateHandler)
 
